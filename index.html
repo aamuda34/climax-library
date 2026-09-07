@@ -5,20 +5,20 @@
 </head>
 <body>
   <h1>Welcome to CLIMAX Library</h1>
-  <p>Enter Access Code:</p>
-  <input type="text" id="accessCode" />
-  <button onclick="login()">Enter</button>
+  <p>Select Class Level:</p>
+  <select id="classLevel" onchange="loadBooks()">
+    <option value="SS1">SS1</option>
+    <option value="SS2">SS2</option>
+    <option value="SS3">SS3</option>
+    <option value="ND1">ND1</option>
+    <option value="ND2">ND2</option>
+    <option value="HND">HND</option>
+  </select>
 
-  <script>
-    function login() {
-      const code = document.getElementById('accessCode').value;
-      if (code === "CLIMAX2026") {
-        alert("Access granted!");
-        // Later: redirect to library home
-      } else {
-        alert("Invalid code");
-      }
-    }
-  </script>
+  <!-- This is the empty box where books will appear -->
+  <div id="books"></div>
+
+  <!-- This connects your page to the Supabase code -->
+  <script type="module" src="script.js"></script>
 </body>
 </html>
