@@ -56,8 +56,11 @@
 
       if (coverFile) {
         const { data, error } = await supabase.storage
-          .from("covers")   // ✅ must match bucket name exactly
-          .upload(Date.now() + "-" + coverFile.name, coverFile)
+          .from("covers")   // ✅ bucket name confirmed
+          .upload(Date.now() + "-" + coverFile.name, coverFile, {
+            cacheControl: "3600",
+            upsert: false
+          })
 
         if (error) {
           resultDiv.innerHTML += "<p style='color:red'>Cover upload failed: " + error.message + "</p>"
@@ -70,7 +73,10 @@
       if (pdfFile) {
         const { data, error } = await supabase.storage
           .from("pdfs")
-          .upload(Date.now() + "-" + pdfFile.name, pdfFile)
+          .upload(Date.now() + "-" + pdfFile.name, pdfFile, {
+            cacheControl: "3600",
+            upsert: false
+          })
 
         if (error) {
           resultDiv.innerHTML += "<p style='color:red'>PDF upload failed: " + error.message + "</p>"
