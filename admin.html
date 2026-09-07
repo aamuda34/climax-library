@@ -7,6 +7,9 @@
 <body>
   <h1>Admin Upload Panel</h1>
   <form id="uploadForm">
+    <label>Title:</label>
+    <input type="text" id="title" required><br><br>
+
     <label>Category:</label>
     <input type="text" id="category" required><br><br>
 
@@ -40,6 +43,7 @@
 
     document.getElementById("uploadForm").addEventListener("submit", async (e) => {
       e.preventDefault()
+      const title = document.getElementById("title").value
       const category = document.getElementById("category").value
       const classLevel = document.getElementById("classLevel").value
       const coverFile = document.getElementById("coverFile").files[0]
@@ -64,7 +68,7 @@
 
       const { error: insertError } = await supabase
         .from("books")
-        .insert([{ category, class_level: classLevel, cover_url: coverUrl, pdf_url: pdfUrl }])
+        .insert([{ title, category, class_level: classLevel, cover_url: coverUrl, pdf_url: pdfUrl }])
 
       const resultDiv = document.getElementById("result")
       if (insertError) {
