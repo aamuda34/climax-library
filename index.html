@@ -6,8 +6,8 @@
 </head>
 <body>
   <h1>Welcome to CLIMAX Library</h1>
-  <label for="classLevel">Select Class Level:</label>
-  <select id="classLevel" onchange="loadBooks()">
+  <label>Select Class Level:</label>
+  <select id="classLevel">
     <option value="SS1">SS1</option>
     <option value="SS2">SS2</option>
     <option value="SS3">SS3</option>
@@ -16,11 +16,49 @@
     <option value="HND">HND</option>
   </select>
 
-  <div id="books"></div>
+  <div id="booksContainer"></div>
 
-  <script type="module" src="script.js"></script>
-  <script>
-    window.onload = () => loadBooks();
+  <script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
+
+    const SUPABASE_URL = "https://tgerdrdangqrbffjxdbb.supabase.co"
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRnZXJkcmRhbmdxcmJmZmp4ZGJiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg3NDgxNjUsImV4cCI6MjEwNDMyNDE2NX0.DjWbXXei1lzSDilHc06BS8Yd02jgZqkVAPuhzOCTP1w"
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+
+    async function loadBooks(classLevel) {
+      const { data: books, error } = await supabase
+        .from("books")
+        .select("*")
+        .eq("class_level", classLevel)
+
+      const container = document.getElementById("booksContainer")
+      container.innerHTML = ""
+
+      if (error) {
+        container.innerHTML = "<p style='color:red'>Error loading books: " + error.message + "</p>"
+        return
+      }
+
+      books.forEach(book => {
+        const card = `
+          <div class="book-card" style="border:1px solid #ccc; padding:10px; margin:10px;">
+            <h3>${book.title}</h3>
+            <img src="${book.cover_url}" alt="${book.title}" style="max-width:150px; display:block; margin-bottom:10px;">
+            <p>Category: ${book.category}</p>
+            <p>Class Level: ${book.class_level}</p>
+            <a href="${book.pdf_url}" target="_blank">Read PDF</a>
+          </div>
+        `
+        container.innerHTML += card
+      })
+    }
+
+    document.getElementById("classLevel").addEventListener("change", (e) => {
+      loadBooks(e.target.value)
+    })
+
+    // Load default SS1 books
+    loadBooks("SS1")
   </script>
 </body>
 </html>
