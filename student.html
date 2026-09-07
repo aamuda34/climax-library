@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>CLIMAX Library</title>
+</head>
+<body>
+  <h1>CLIMAX Library - Student View</h1>
+  <div id="books"></div>
+
+  <script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
+
+    const SUPABASE_URL = "https://tgerdrdangqrbffjxdbb.supabase.co"
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRnZXJkcmRhbmdxcmJmZmp4ZGJiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg3NDgxNjUsImV4cCI6MjEwNDMyNDE2NX0.DjWbXXei1lzSDilHc06BS8Yd02jgZqkVAPuhzOCTP1w"
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+
+    async function loadBooks() {
+      const { data, error } = await supabase
+        .from("books")
+        .select("*")
+        .order("id", { ascending: false })
+
+      const booksDiv = document.getElementById("books")
+      booksDiv.innerHTML = ""
+
+      if (error) {
+        booksDiv.innerHTML = "<p style='color:red'>Error loading books: " + error.message + "</p>"
+        return
+      }
+
+      data.forEach(book => {
+        const bookCard = `
+          <div style="border:1px solid #ccc; padding:10px; margin:10px; max-width:300px">
+            <h3>${book.title}</h3>
+            <p><strong>Category:</strong> ${book.category}</p>
+            <p><strong>Class Level:</strong> ${book.class_level}</p>
+            ${book.cover_url ? `<img src="${book.cover_url}" alt="Cover" style="width:100%; height:auto; margin-bottom:10px">` : ""}
+            ${book.pdf_url ? `<a href="${book.pdf_url}" target="_blank">Open PDF</a>` : ""}
+          </div>
+        `
+        booksDiv.innerHTML += bookCard
+      })
+    }
+
+    loadBooks()
+  </script>
+</body>
+</html>

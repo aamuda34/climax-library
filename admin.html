@@ -32,6 +32,9 @@
     <button type="submit">Upload Book</button>
   </form>
 
+  <h2>Manage Books</h2>
+  <div id="books"></div>
+
   <div id="result"></div>
 
   <script type="module">
@@ -56,10 +59,11 @@
 
       if (coverFile) {
         const { data, error } = await supabase.storage
-          .from("covers")   // ✅ bucket name confirmed
+          .from("covers")
           .upload(Date.now() + "-" + coverFile.name, coverFile, {
             cacheControl: "3600",
-            upsert: false
+            upsert: false,
+            contentType: coverFile.type
           })
 
         if (error) {
@@ -75,7 +79,8 @@
           .from("pdfs")
           .upload(Date.now() + "-" + pdfFile.name, pdfFile, {
             cacheControl: "3600",
-            upsert: false
+            upsert: false,
+            contentType: pdfFile.type
           })
 
         if (error) {
@@ -94,8 +99,59 @@
         resultDiv.innerHTML += "<p style='color:red'>Error saving book: " + insertError.message + "</p>"
       } else {
         resultDiv.innerHTML += "<p style='color:green'>Book record saved successfully!</p>"
+        loadBooks()
       }
     })
+
+    async function loadBooks() {
+      const { data, error } = await supabase
+        .from("books")
+        .select("*")
+        .order("id", { ascending: false })
+
+      const booksDiv = document.getElementById("books")
+      booksDiv.innerHTML = ""
+
+      if (error) {
+        booksDiv.innerHTML = "<p style='color:red'>Error loading books: " + error.message + "</p>"
+        return
+      }
+
+      data.forEach(book => {
+        const bookCard = document.createElement("div")
+        bookCard.style.border = "1px solid #ccc"
+        bookCard.style.padding = "10px"
+        bookCard.style.margin = "10px"
+        bookCard.style.maxWidth = "300px"
+
+        bookCard.innerHTML = `
+          <h3>${book.title}</h3>
+          <p><strong>Category:</strong> ${book.category}</p>
+          <p><strong>Class Level:</strong> ${book.class_level}</p>
+          ${book.cover_url ? `<img src="${book.cover_url}" alt="Cover" style="width:100%; height:auto; margin-bottom:10px">` : ""}
+          ${book.pdf_url ? `<a href="${book.pdf_url}" target="_blank">Open PDF</a>` : ""}
+          <br><br>
+          <button onclick="deleteBook(${book.id})">Delete</button>
+        `
+        booksDiv.appendChild(bookCard)
+      })
+    }
+
+    window.deleteBook = async function(id) {
+      const { error } = await supabase
+        .from("books")
+        .delete()
+        .eq("id", id)
+
+      if (error) {
+        alert("Error deleting book: " + error.message)
+      } else {
+        alert("Book deleted successfully!")
+        loadBooks()
+      }
+    }
+
+    loadBooks()
   </script>
 </body>
 </html>
