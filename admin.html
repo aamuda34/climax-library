@@ -38,7 +38,7 @@
     import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
 
     const SUPABASE_URL = "https://tgerdrdangqrbffjxdbb.supabase.co"
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRnZXJkcmRhbmdxcmJmZmp4ZGJiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg3NDgxNjUsImV4cCI6MjEwNDMyNDE2NX0.DjWbXXei1lzSDilHc06BS8Yd02jgZqkVAPuhzOCTP1w" // updated "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
     const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
 
     document.getElementById("uploadForm").addEventListener("submit", async (e) => {
@@ -51,8 +51,8 @@
       const coverFile = document.getElementById("coverFile").files[0]
       const pdfFile = document.getElementById("pdfFile").files[0]
 
-      console.log("Cover file:", coverFile)
-      console.log("PDF file:", pdfFile)
+      console.log("Cover file object:", coverFile)
+      console.log("PDF file object:", pdfFile)
 
       let coverUrl = ""
       let pdfUrl = ""
@@ -60,9 +60,9 @@
       resultDiv.innerHTML = ""
 
       if (coverFile) {
-        console.log("Uploading cover...")
+        console.log("Uploading cover to bucket 'covers'...")
         const { data, error } = await supabase.storage
-          .from("covers")
+          .from("covers")   // ✅ exact bucket name
           .upload(Date.now() + "-" + coverFile.name, coverFile, {
             cacheControl: "3600",
             upsert: false,
@@ -79,7 +79,7 @@
       }
 
       if (pdfFile) {
-        console.log("Uploading PDF...")
+        console.log("Uploading PDF to bucket 'pdfs'...")
         const { data, error } = await supabase.storage
           .from("pdfs")
           .upload(Date.now() + "-" + pdfFile.name, pdfFile, {
