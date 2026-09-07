@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>CLIMAX Library Admin</title>
+</head>
+<body>
+  <h1>Admin Upload Panel</h1>
+  <form id="uploadForm">
+    <label>Category:</label>
+    <input type="text" id="category" required><br><br>
+
+    <label>Class Level:</label>
+    <select id="classLevel" required>
+      <option value="SS1">SS1</option>
+      <option value="SS2">SS2</option>
+      <option value="SS3">SS3</option>
+      <option value="ND1">ND1</option>
+      <option value="ND2">ND2</option>
+      <option value="HND">HND</option>
+    </select><br><br>
+
+    <label>Cover URL:</label>
+    <input type="text" id="coverUrl"><br><br>
+
+    <label>PDF URL:</label>
+    <input type="text" id="pdfUrl"><br><br>
+
+    <button type="submit">Upload Book</button>
+  </form>
+
+  <div id="result"></div>
+
+  <script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
+
+    const SUPABASE_URL = "https://tgerdrdangqrbffjxdbb.supabase.co"
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+
+    document.getElementById("uploadForm").addEventListener("submit", async (e) => {
+      e.preventDefault()
+      const category = document.getElementById("category").value
+      const classLevel = document.getElementById("classLevel").value
+      const coverUrl = document.getElementById("coverUrl").value
+      const pdfUrl = document.getElementById("pdfUrl").value
+
+      const { data, error } = await supabase
+        .from("books")
+        .insert([{ category, class_level: classLevel, cover_url: coverUrl, pdf_url: pdfUrl }])
+
+      const resultDiv = document.getElementById("result")
+      if (error) {
+        resultDiv.innerHTML = "<p style='color:red'>Error uploading book: " + error.message + "</p>"
+      } else {
+        resultDiv.innerHTML = "<p style='color:green'>Book uploaded successfully!</p>"
+      }
+    })
+  </script>
+</body>
+</html>
