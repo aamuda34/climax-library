@@ -5,16 +5,16 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
 
 async function fetchBooks(classLevel) {
+  // TEMP: ignore filter to confirm connection
   const { data, error } = await supabase
     .from('books')
     .select('*')
-    .eq('class_level', classLevel)
 
   if (error) {
     return [{ title: "Error fetching books", cover_url: "", pdf_url: "" }]
   }
   if (!data || data.length === 0) {
-    return [{ title: "No books found for " + classLevel, cover_url: "", pdf_url: "" }]
+    return [{ title: "No books in table", cover_url: "", pdf_url: "" }]
   }
   return data
 }
@@ -30,6 +30,7 @@ async function loadBooks() {
       <h3>${book.title}</h3>
       ${book.cover_url ? `<img src="${book.cover_url}" alt="${book.title}" width="120"/>` : ""}
       ${book.pdf_url ? `<p><a href="${book.pdf_url}" target="_blank">Read PDF</a></p>` : ""}
+      <p>Class Level: ${book.class_level}</p>
     `
     container.appendChild(div)
   })
