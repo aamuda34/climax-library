@@ -1,11 +1,12 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8">
   <title>CLIMAX Library</title>
 </head>
 <body>
   <h1>Welcome to CLIMAX Library</h1>
-  <p>Select Class Level:</p>
+  <label for="classLevel">Select Class Level:</label>
   <select id="classLevel" onchange="loadBooks()">
     <option value="SS1">SS1</option>
     <option value="SS2">SS2</option>
@@ -15,10 +16,9 @@
     <option value="HND">HND</option>
   </select>
 
-  <!-- This is the empty box where books will appear -->
+  <!-- This is the missing container -->
   <div id="books"></div>
 
-  <!-- This connects your page to the Supabase code -->
   <script type="module" src="script.js"></script>
 </body>
 </html>
