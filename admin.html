@@ -20,11 +20,11 @@
       <option value="HND">HND</option>
     </select><br><br>
 
-    <label>Cover URL:</label>
-    <input type="text" id="coverUrl"><br><br>
+    <label>Cover Image:</label>
+    <input type="file" id="coverFile" accept="image/*"><br><br>
 
-    <label>PDF URL:</label>
-    <input type="text" id="pdfUrl"><br><br>
+    <label>PDF File:</label>
+    <input type="file" id="pdfFile" accept="application/pdf"><br><br>
 
     <button type="submit">Upload Book</button>
   </form>
@@ -42,16 +42,33 @@
       e.preventDefault()
       const category = document.getElementById("category").value
       const classLevel = document.getElementById("classLevel").value
-      const coverUrl = document.getElementById("coverUrl").value
-      const pdfUrl = document.getElementById("pdfUrl").value
+      const coverFile = document.getElementById("coverFile").files[0]
+      const pdfFile = document.getElementById("pdfFile").files[0]
 
-      const { data, error } = await supabase
+      let coverUrl = ""
+      let pdfUrl = ""
+
+      if (coverFile) {
+        const { data, error } = await supabase.storage.from("covers").upload(Date.now() + "-" + coverFile.name, coverFile)
+        if (!error) {
+          coverUrl = supabase.storage.from("covers").getPublicUrl(data.path).data.publicUrl
+        }
+      }
+
+      if (pdfFile) {
+        const { data, error } = await supabase.storage.from("pdfs").upload(Date.now() + "-" + pdfFile.name, pdfFile)
+        if (!error) {
+          pdfUrl = supabase.storage.from("pdfs").getPublicUrl(data.path).data.publicUrl
+        }
+      }
+
+      const { error: insertError } = await supabase
         .from("books")
         .insert([{ category, class_level: classLevel, cover_url: coverUrl, pdf_url: pdfUrl }])
 
       const resultDiv = document.getElementById("result")
-      if (error) {
-        resultDiv.innerHTML = "<p style='color:red'>Error uploading book: " + error.message + "</p>"
+      if (insertError) {
+        resultDiv.innerHTML = "<p style='color:red'>Error uploading book: " + insertError.message + "</p>"
       } else {
         resultDiv.innerHTML = "<p style='color:green'>Book uploaded successfully!</p>"
       }
