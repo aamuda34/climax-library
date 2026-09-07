@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>CLIMAX Library</title>
+</head>
+<body>
+  <h1>Welcome to CLIMAX Library</h1>
+  <p>Enter Access Code:</p>
+  <input type="text" id="accessCode" />
+  <button onclick="login()">Enter</button>
+
+  <script>
+    function login() {
+      const code = document.getElementById('accessCode').value;
+      if (code === "CLIMAX2026") {
+        alert("Access granted!");
+        // Later: redirect to library home
+      } else {
+        alert("Invalid code");
+      }
+    }
+  </script>
+</body>
+</html>
