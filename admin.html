@@ -51,18 +51,26 @@
 
       let coverUrl = ""
       let pdfUrl = ""
+      const resultDiv = document.getElementById("result")
+      resultDiv.innerHTML = ""
 
       if (coverFile) {
         const { data, error } = await supabase.storage.from("covers").upload(Date.now() + "-" + coverFile.name, coverFile)
-        if (!error) {
+        if (error) {
+          resultDiv.innerHTML += "<p style='color:red'>Cover upload failed: " + error.message + "</p>"
+        } else {
           coverUrl = supabase.storage.from("covers").getPublicUrl(data.path).data.publicUrl
+          resultDiv.innerHTML += "<p style='color:green'>Cover uploaded successfully!</p>"
         }
       }
 
       if (pdfFile) {
         const { data, error } = await supabase.storage.from("pdfs").upload(Date.now() + "-" + pdfFile.name, pdfFile)
-        if (!error) {
+        if (error) {
+          resultDiv.innerHTML += "<p style='color:red'>PDF upload failed: " + error.message + "</p>"
+        } else {
           pdfUrl = supabase.storage.from("pdfs").getPublicUrl(data.path).data.publicUrl
+          resultDiv.innerHTML += "<p style='color:green'>PDF uploaded successfully!</p>"
         }
       }
 
@@ -70,11 +78,10 @@
         .from("books")
         .insert([{ title, category, class_level: classLevel, cover_url: coverUrl, pdf_url: pdfUrl }])
 
-      const resultDiv = document.getElementById("result")
       if (insertError) {
-        resultDiv.innerHTML = "<p style='color:red'>Error uploading book: " + insertError.message + "</p>"
+        resultDiv.innerHTML += "<p style='color:red'>Error saving book: " + insertError.message + "</p>"
       } else {
-        resultDiv.innerHTML = "<p style='color:green'>Book uploaded successfully!</p>"
+        resultDiv.innerHTML += "<p style='color:green'>Book record saved successfully!</p>"
       }
     })
   </script>
