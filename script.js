@@ -5,21 +5,21 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
 
 async function fetchBooks(classLevel) {
-  // TEMP: ignore filter to confirm connection
   const { data, error } = await supabase
     .from('books')
-    .select('*')
+    .select('title, cover_url, pdf_url, class_level')
+    .eq('class_level', classLevel)
 
   if (error) {
     return [{ title: "Error fetching books", cover_url: "", pdf_url: "" }]
   }
   if (!data || data.length === 0) {
-    return [{ title: "No books in table", cover_url: "", pdf_url: "" }]
+    return [{ title: "No books found for " + classLevel, cover_url: "", pdf_url: "" }]
   }
   return data
 }
 
-async function loadBooks() {
+export async function loadBooks() {
   const level = document.getElementById("classLevel").value
   const books = await fetchBooks(level)
   const container = document.getElementById("books")
