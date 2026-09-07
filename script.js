@@ -1,7 +1,7 @@
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
 
-const SUPABASE_URL = "https://YOUR-PROJECT-URL.supabase.co"
-const SUPABASE_ANON_KEY = "YOUR-ANON-KEY"
+const SUPABASE_URL = "https://tgerdrdangqrbffjxdbb.supabase.co"
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRnZXJkcmRhbmdxcmJmZmp4ZGJiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg3NDgxNjUsImV4cCI6MjEwNDMyNDE2NX0.DjWbXXei1lzSDilHc06BS8Yd02jgZqkVAPuhzOCTP1w"
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
 
 async function fetchBooks(classLevel) {
@@ -11,10 +11,10 @@ async function fetchBooks(classLevel) {
     .eq('class_level', classLevel)
 
   if (error) {
-    return [{ category: "Error fetching books", cover_url: "", pdf_url: "" }]
+    return [{ category: "Error fetching books", cover_url: "", pdf_url: "", class_level: "" }]
   }
   if (!data || data.length === 0) {
-    return [{ category: "No books found for " + classLevel, cover_url: "", pdf_url: "" }]
+    return [{ category: "No books found for " + classLevel, cover_url: "", pdf_url: "", class_level: classLevel }]
   }
   return data
 }
