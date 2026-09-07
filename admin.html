@@ -1,72 +1,23 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>CLIMAX Library Admin</title>
-</head>
-<body>
-  <h1>Admin Upload Panel</h1>
-  <form id="uploadForm">
-    <label>Title:</label>
-    <input type="text" id="title" required><br><br>
-    <label>Category:</label>
-    <input type="text" id="category" required><br><br>
-    <label>Class Level:</label>
-    <select id="classLevel" required>
-      <option value="SS1">SS1</option>
-      <option value="SS2">SS2</option>
-      <option value="SS3">SS3</option>
-      <option value="ND1">ND1</option>
-      <option value="ND2">ND2</option>
-      <option value="HND">HND</option>
-    </select><br><br>
-    <label>Cover Image:</label>
-    <input type="file" id="coverFile" accept="image/*"><br><br>
-    <label>PDF File:</label>
-    <input type="file" id="pdfFile" accept="application/pdf"><br><br>
-    <button type="submit">Upload Book</button>
-  </form>
-  <div id="result"></div>
-  <script type="module">
-    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
+
     const SUPABASE_URL = "https://tgerdrdangqrbffjxdbb.supabase.co"
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRnZXJkcmRhbmdxcmJmZmp4ZGJiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg3NDgxNjUsImV4cCI6MjEwNDMyNDE2NX0.DjWbXXei1lzSDilHc06BS8Yd02jgZqkVAPuhzOCTP1w"
     const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
-    document.getElementById("uploadForm").addEventListener("submit", async (e) => {
-      e.preventDefault()
-      const title = document.getElementById("title").value
-      const category = document.getElementById("category").value
-      const classLevel = document.getElementById("classLevel").value
-      const coverFile = document.getElementById("coverFile").files[0]
-      const pdfFile = document.getElementById("pdfFile").files[0]
-      let coverUrl = ""
-      let pdfUrl = ""
-      const resultDiv = document.getElementById("result")
-      resultDiv.innerHTML = ""
-      if (coverFile) {
-        const { data, error } = await supabase.storage.from("covers").upload(Date.now() + "-" + coverFile.name, coverFile, {
-          cacheControl: "3600", upsert: false, contentType: coverFile.type || "image/jpeg"
-        })
-        if (error) resultDiv.innerHTML += "<p style='color:red'>Cover upload failed: " + error.message + "</p>"
-        else {
-          coverUrl = supabase.storage.from("covers").getPublicUrl(data.path).data.publicUrl
-          resultDiv.innerHTML += "<p style='color:green'>Cover uploaded successfully!</p>"
-        }
-      }
-      if (pdfFile) {
-        const { data, error } = await supabase.storage.from("pdfs").upload(Date.now() + "-" + pdfFile.name, pdfFile, {
-          cacheControl: "3600", upsert: false, contentType: pdfFile.type || "application/pdf"
-        })
-        if (error) resultDiv.innerHTML += "<p style='color:red'>PDF upload failed: " + error.message + "</p>"
-        else {
-          pdfUrl = supabase.storage.from("pdfs").getPublicUrl(data.path).data.publicUrl
-          resultDiv.innerHTML += "<p style='color:green'>PDF uploaded successfully!</p>"
-        }
-      }
-      const { error: insertError } = await supabase.from("books").insert([{ title, category, class_level: classLevel, cover_url: coverUrl, pdf_url: pdfUrl }])
-      if (insertError) resultDiv.innerHTML += "<p style='color:red'>Error saving book: " + insertError.message + "</p>"
-      else resultDiv.innerHTML += "<p style='color:green'>Book record saved successfully!</p>"
-    })
-  </script>
-</body>
-</html>
+
+    // Cover upload
+    const { data: coverData, error: coverError } = await supabase.storage
+      .from("covers")
+      .upload(Date.now() + "-" + coverFile.name, coverFile, {
+        cacheControl: "3600",
+        upsert: true,
+        contentType: coverFile.type || "image/jpeg"
+      })
+
+    // PDF upload
+    const { data: pdfData, error: pdfError } = await supabase.storage
+      .from("pdfs")
+      .upload(Date.now() + "-" + pdfFile.name, pdfFile, {
+        cacheControl: "3600",
+        upsert: true,
+        contentType: pdfFile.type || "application/pdf"
+      })
+    
