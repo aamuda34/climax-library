@@ -1,9 +1,9 @@
 // Import Supabase client
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
 
-// Replace with your Supabase project details
-const SUPABASE_URL = "https://YOUR_PROJECT_ID.supabase.co"
-const SUPABASE_ANON_KEY = "YOUR_PUBLIC_ANON_KEY"
+// Your actual project URL and anon key
+const SUPABASE_URL = "https://tgerdrdangqrbffjxdbb.supabase.co"
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRnZXJkcmRhbmdxcmJmZmp4ZGJiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg3NDgxNjUsImV4cCI6MjEwNDMyNDE2NX0.DjWbXXei1lzSDilHc06BS8Yd02jgZqkVAPuhzOCTP1w"
 
 // Create client
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
@@ -22,7 +22,6 @@ async function fetchBooks(classLevel) {
   return data
 }
 
-// Load books when dropdown changes
 async function loadBooks() {
   const level = document.getElementById("classLevel").value
   const books = await fetchBooks(level)
