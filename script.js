@@ -1,20 +1,20 @@
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
 
-const SUPABASE_URL = "https://tgerdrdangqrbffjxdbb.supabase.co"
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+const SUPABASE_URL = "https://YOUR-PROJECT-URL.supabase.co"
+const SUPABASE_ANON_KEY = "YOUR-ANON-KEY"
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
 
 async function fetchBooks(classLevel) {
   const { data, error } = await supabase
     .from('books')
-    .select('title, cover_url, pdf_url, class_level')
+    .select('category, cover_url, pdf_url, class_level')
     .eq('class_level', classLevel)
 
   if (error) {
-    return [{ title: "Error fetching books", cover_url: "", pdf_url: "" }]
+    return [{ category: "Error fetching books", cover_url: "", pdf_url: "" }]
   }
   if (!data || data.length === 0) {
-    return [{ title: "No books found for " + classLevel, cover_url: "", pdf_url: "" }]
+    return [{ category: "No books found for " + classLevel, cover_url: "", pdf_url: "" }]
   }
   return data
 }
@@ -27,8 +27,8 @@ async function loadBooks() {
   books.forEach(book => {
     const div = document.createElement("div")
     div.innerHTML = `
-      <h3>${book.title}</h3>
-      ${book.cover_url ? `<img src="${book.cover_url}" alt="${book.title}" width="120"/>` : ""}
+      <h3>${book.category}</h3>
+      ${book.cover_url ? `<img src="${book.cover_url}" alt="${book.category}" width="120"/>` : ""}
       ${book.pdf_url ? `<p><a href="${book.pdf_url}" target="_blank">Read PDF</a></p>` : ""}
       <p>Class Level: ${book.class_level}</p>
     `
@@ -36,5 +36,5 @@ async function loadBooks() {
   })
 }
 
-// Expose globally so HTML can call it
+// Expose globally
 window.loadBooks = loadBooks
