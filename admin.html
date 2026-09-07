@@ -32,25 +32,27 @@
     <button type="submit">Upload Book</button>
   </form>
 
-  <h2>Manage Books</h2>
-  <div id="books"></div>
-
   <div id="result"></div>
 
   <script type="module">
     import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
 
     const SUPABASE_URL = "https://tgerdrdangqrbffjxdbb.supabase.co"
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRnZXJkcmRhbmdxcmJmZmp4ZGJiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg3NDgxNjUsImV4cCI6MjEwNDMyNDE2NX0.DjWbXXei1lzSDilHc06BS8Yd02jgZqkVAPuhzOCTP1w"
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
     const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
 
     document.getElementById("uploadForm").addEventListener("submit", async (e) => {
       e.preventDefault()
+      console.log("Form submitted")
+
       const title = document.getElementById("title").value
       const category = document.getElementById("category").value
       const classLevel = document.getElementById("classLevel").value
       const coverFile = document.getElementById("coverFile").files[0]
       const pdfFile = document.getElementById("pdfFile").files[0]
+
+      console.log("Cover file:", coverFile)
+      console.log("PDF file:", pdfFile)
 
       let coverUrl = ""
       let pdfUrl = ""
@@ -58,13 +60,15 @@
       resultDiv.innerHTML = ""
 
       if (coverFile) {
+        console.log("Uploading cover...")
         const { data, error } = await supabase.storage
           .from("covers")
           .upload(Date.now() + "-" + coverFile.name, coverFile, {
             cacheControl: "3600",
             upsert: false,
-            contentType: coverFile.type
+            contentType: coverFile.type || "image/jpeg"
           })
+        console.log("Cover upload result:", data, error)
 
         if (error) {
           resultDiv.innerHTML += "<p style='color:red'>Cover upload failed: " + error.message + "</p>"
@@ -75,13 +79,15 @@
       }
 
       if (pdfFile) {
+        console.log("Uploading PDF...")
         const { data, error } = await supabase.storage
           .from("pdfs")
           .upload(Date.now() + "-" + pdfFile.name, pdfFile, {
             cacheControl: "3600",
             upsert: false,
-            contentType: pdfFile.type
+            contentType: pdfFile.type || "application/pdf"
           })
+        console.log("PDF upload result:", data, error)
 
         if (error) {
           resultDiv.innerHTML += "<p style='color:red'>PDF upload failed: " + error.message + "</p>"
@@ -91,67 +97,18 @@
         }
       }
 
+      console.log("Saving book record...")
       const { error: insertError } = await supabase
         .from("books")
         .insert([{ title, category, class_level: classLevel, cover_url: coverUrl, pdf_url: pdfUrl }])
+      console.log("Insert result:", insertError)
 
       if (insertError) {
         resultDiv.innerHTML += "<p style='color:red'>Error saving book: " + insertError.message + "</p>"
       } else {
         resultDiv.innerHTML += "<p style='color:green'>Book record saved successfully!</p>"
-        loadBooks()
       }
     })
-
-    async function loadBooks() {
-      const { data, error } = await supabase
-        .from("books")
-        .select("*")
-        .order("id", { ascending: false })
-
-      const booksDiv = document.getElementById("books")
-      booksDiv.innerHTML = ""
-
-      if (error) {
-        booksDiv.innerHTML = "<p style='color:red'>Error loading books: " + error.message + "</p>"
-        return
-      }
-
-      data.forEach(book => {
-        const bookCard = document.createElement("div")
-        bookCard.style.border = "1px solid #ccc"
-        bookCard.style.padding = "10px"
-        bookCard.style.margin = "10px"
-        bookCard.style.maxWidth = "300px"
-
-        bookCard.innerHTML = `
-          <h3>${book.title}</h3>
-          <p><strong>Category:</strong> ${book.category}</p>
-          <p><strong>Class Level:</strong> ${book.class_level}</p>
-          ${book.cover_url ? `<img src="${book.cover_url}" alt="Cover" style="width:100%; height:auto; margin-bottom:10px">` : ""}
-          ${book.pdf_url ? `<a href="${book.pdf_url}" target="_blank">Open PDF</a>` : ""}
-          <br><br>
-          <button onclick="deleteBook(${book.id})">Delete</button>
-        `
-        booksDiv.appendChild(bookCard)
-      })
-    }
-
-    window.deleteBook = async function(id) {
-      const { error } = await supabase
-        .from("books")
-        .delete()
-        .eq("id", id)
-
-      if (error) {
-        alert("Error deleting book: " + error.message)
-      } else {
-        alert("Book deleted successfully!")
-        loadBooks()
-      }
-    }
-
-    loadBooks()
   </script>
 </body>
 </html>
