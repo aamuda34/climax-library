@@ -1,23 +1,13 @@
-
-    const SUPABASE_URL = "https://tgerdrdangqrbffjxdbb.supabase.co"
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRnZXJkcmRhbmdxcmJmZmp4ZGJiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg3NDgxNjUsImV4cCI6MjEwNDMyNDE2NX0.DjWbXXei1lzSDilHc06BS8Yd02jgZqkVAPuhzOCTP1w"
-    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
-
-    // Cover upload
-    const { data: coverData, error: coverError } = await supabase.storage
-      .from("covers")
-      .upload(Date.now() + "-" + coverFile.name, coverFile, {
-        cacheControl: "3600",
-        upsert: true,
-        contentType: coverFile.type || "image/jpeg"
-      })
-
-    // PDF upload
-    const { data: pdfData, error: pdfError } = await supabase.storage
-      .from("pdfs")
-      .upload(Date.now() + "-" + pdfFile.name, pdfFile, {
-        cacheControl: "3600",
-        upsert: true,
-        contentType: pdfFile.type || "application/pdf"
-      })
-    
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Administration — CLIMAX Library</title>
+  <link rel="stylesheet" href="/src/styles.css">
+</head>
+<body>
+  <div id="app"></div>
+  <script type="module" src="/src/admin.js"></script>
+</body>
+</html>
