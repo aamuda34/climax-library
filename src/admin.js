@@ -1,14 +1,9 @@
 
 import { supabase } from './supabase.js';
 import { requireAdmin, signOut } from './auth.js';
+import { openBookReader, downloadBookFile } from './bookReader.js';
 
 const app = document.querySelector('#app');
-
-let students = [];
-let books = [];
-
-const levels = ['JSS1','JSS2','JSS3','SSS1','SSS2','SSS3'];
-const departments = ['Science','Commercial','Arts'];
 
 function escapeHtml(value = '') {
   return String(value)
@@ -19,9 +14,10 @@ function escapeHtml(value = '') {
     .replaceAll("'", '&#039;');
 }
 
-function isSss(level) {
-  return level?.startsWith('SSS');
-}
+let students = [];
+let books = [];
+let currentAdminProfile = null;
+
 
 async function loadData() {
   const [studentsResult, booksResult] = await Promise.all([
@@ -44,7 +40,7 @@ function render() {
     <div class="admin-layout">
       <aside class="sidebar">
         <div class="brand sidebar-brand">
-          <div class="brand-mark">C</div>
+          <img class="brand-logo" src="/climax-logo.png" alt="CLIMAX Library Foundation">
           <div>
             <strong>CLIMAX Library</strong>
             <span>Administration</span>
@@ -66,7 +62,7 @@ function render() {
             <span class="eyebrow">ADMINISTRATION</span>
             <h1>Library Management</h1>
           </div>
-          <div class="admin-name">Adeyimika Emmanuel Amuda</div>
+          <div class="admin-name">${escapeHtml(currentAdminProfile?.full_name || 'Administrator')}</div>
         </header>
 
         <section id="adminContent"></section>
@@ -344,6 +340,9 @@ async function editStudent(id) {
   const currentLevel = student.level || '';
   const currentDepartment = student.department || '';
 
+  const levels = ['JSS1','JSS2','JSS3','SSS1','SSS2','SSS3'];
+  const departments = ['Science','Commercial','Arts'];
+
   const levelOptions = levels.map(level =>
     `<option value="${level}" ${level === currentLevel ? 'selected' : ''}>${level}</option>`
   ).join('');
@@ -454,59 +453,46 @@ async function editStudent(id) {
 function renderBooks(content) {
   const rows = books.map(book => `
     <tr>
-      <td><strong>${escapeHtml(book.title)}</strong></td>
+      <td><strong>${escapeHtml(book.title)}</strong><small>${escapeHtml(book.file_type || 'pdf').toUpperCase()} · ${book.allow_download ? 'Student download ON' : 'Student download OFF'}</small></td>
       <td>${escapeHtml(book.author || '—')}</td>
-      <td>${escapeHtml(book.level)}</td>
-      <td>${escapeHtml(book.department || '—')}</td>
-      <td>${book.published ? 'Published' : 'Hidden'}</td>
-      <td>
-        <button class="small-btn toggle-book-btn" data-id="${book.id}">
-          ${book.published ? 'Hide' : 'Publish'}
-        </button>
-        <button class="small-btn danger delete-book-btn" data-id="${book.id}">
-          Delete
-        </button>
-      </td>
-    </tr>
-  `).join('');
-
+      <td><span class="status ${book.published ? 'active' : 'suspended'}">${book.published ? 'Published' : 'Hidden'}</span></td>
+      <td><div class="row-actions">
+        <button class="small-btn primary-small read-admin-btn" data-id="${book.id}">Read</button>
+        <button class="small-btn download-admin-btn" data-id="${book.id}">Download</button>
+        <button class="small-btn download-toggle-btn" data-id="${book.id}">${book.allow_download ? 'Disable download' : 'Enable download'}</button>
+        <button class="small-btn toggle-book-btn" data-id="${book.id}">${book.published ? 'Hide' : 'Publish'}</button>
+        <button class="small-btn danger delete-book-btn" data-id="${book.id}">Delete</button>
+      </div></td>
+    </tr>`).join('');
   content.innerHTML = `
-    <div class="panel">
-      <div class="panel-heading">
-        <div>
-          <span class="eyebrow">LIBRARY CONTENT</span>
-          <h2>Books</h2>
-        </div>
-        <button id="addBookBtn" class="primary-btn">Add book</button>
-      </div>
-
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Title</th>
-              <th>Author</th>
-              <th>Level</th>
-              <th>Department</th>
-              <th>Status</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>${rows || '<tr><td colspan="6">No books yet.</td></tr>'}</tbody>
-        </table>
-      </div>
-    </div>
-  `;
-
+    <div class="panel"><div class="panel-heading"><div><span class="eyebrow">LIBRARY CONTENT</span><h2>Books</h2><p class="panel-note">Every approved student can access every published book.</p></div><button id="addBookBtn" class="primary-btn">Add book</button></div>
+      <div class="table-wrap"><table><thead><tr><th>Book</th><th>Author</th><th>Status</th><th>Actions</th></tr></thead><tbody>${rows || '<tr><td colspan="4">No books yet.</td></tr>'}</tbody></table></div>
+    </div>`;
   document.querySelector('#addBookBtn').addEventListener('click', showBookForm);
+  document.querySelectorAll('.read-admin-btn').forEach(btn => btn.onclick = () => adminReadBook(btn.dataset.id));
+  document.querySelectorAll('.download-admin-btn').forEach(btn => btn.onclick = () => adminDownloadBook(btn.dataset.id, btn));
+  document.querySelectorAll('.download-toggle-btn').forEach(btn => btn.onclick = () => toggleBookDownload(btn.dataset.id));
+  document.querySelectorAll('.toggle-book-btn').forEach(btn => btn.onclick = () => toggleBook(btn.dataset.id));
+  document.querySelectorAll('.delete-book-btn').forEach(btn => btn.onclick = () => deleteBook(btn.dataset.id));
+}
 
-  document.querySelectorAll('.toggle-book-btn').forEach(btn => {
-    btn.onclick = () => toggleBook(btn.dataset.id);
-  });
+async function adminReadBook(id) {
+  const book = books.find(b => String(b.id) === String(id)); if (!book) return;
+  try { await openBookReader(supabase, book); } catch (error) { console.error(error); alert('The book could not be opened right now.'); }
+}
 
-  document.querySelectorAll('.delete-book-btn').forEach(btn => {
-    btn.onclick = () => deleteBook(btn.dataset.id);
-  });
+async function adminDownloadBook(id, button) {
+  const book = books.find(b => String(b.id) === String(id)); if (!book) return;
+  const original = button.textContent; button.disabled = true; button.textContent = 'Preparing…';
+  try { await downloadBookFile(supabase, book); } catch (error) { console.error(error); alert('The book could not be downloaded right now.'); }
+  finally { button.disabled = false; button.textContent = original; }
+}
+
+async function toggleBookDownload(id) {
+  const book = books.find(b => String(b.id) === String(id)); if (!book) return;
+  const { error } = await supabase.from('books').update({ allow_download: !Boolean(book.allow_download) }).eq('id', id);
+  if (error) { console.error(error); alert('Could not change the download setting. Run the database migration first.'); return; }
+  await loadData(); renderSection('books');
 }
 
 async function toggleBook(id) {
@@ -605,216 +591,37 @@ async function deleteBook(id) {
 }
 
 function showBookForm() {
-  const modal = document.createElement('div');
-  modal.className = 'modal-overlay';
-
+  const modal = document.createElement('div'); modal.className = 'modal-overlay';
   modal.innerHTML = `
-    <div class="modal-card">
-      <div class="modal-header">
-        <h2>Add book</h2>
-        <button type="button" class="icon-btn" id="closeModal">×</button>
-      </div>
-
+    <div class="modal-card"><div class="modal-header"><div><span class="eyebrow">LIBRARY CONTENT</span><h2>Add book</h2></div><button type="button" class="icon-btn" id="closeModal">×</button></div>
       <form id="bookForm">
-        <label>Book title
-          <input name="title" required>
-        </label>
-
-        <label>Author
-          <input name="author">
-        </label>
-
-        <label>Description
-          <textarea name="description" rows="4"></textarea>
-        </label>
-
-        <label>Level
-          <select name="level" id="bookLevel" required>
-            <option value="">Choose level</option>
-            ${levels.map(l => `<option value="${l}">${l}</option>`).join('')}
-          </select>
-        </label>
-
-        <label id="departmentField" style="display:none">Department
-          <select name="department">
-            <option value="">Choose department</option>
-            ${departments.map(d => `<option value="${d}">${d}</option>`).join('')}
-          </select>
-        </label>
-
-        <label>Cover image
-          <input type="file" name="cover" accept="image/*">
-        </label>
-
-        <label>Book file (PDF or EPUB)
-          <input
-            type="file"
-            name="book"
-            accept="application/pdf,.pdf,application/epub+zip,.epub"
-            required
-          >
-        </label>
-
+        <label>Book title<input name="title" required></label>
+        <label>Author<input name="author"></label>
+        <label>Description<textarea name="description" rows="4"></textarea></label>
+        <label>Cover image<input type="file" name="cover" accept="image/*"></label>
+        <label>Book file (PDF or EPUB)<input type="file" name="book" accept="application/pdf,.pdf,application/epub+zip,.epub" required></label>
+        <label class="checkbox-field"><input type="checkbox" name="allow_download"><span><strong>Allow student downloads</strong><small>Students can download this book only when this is enabled.</small></span></label>
         <button class="primary-btn" type="submit">Upload book</button>
       </form>
-    </div>
-  `;
-
-  document.body.appendChild(modal);
-
-  modal.querySelector('#closeModal').onclick = () => modal.remove();
-
-  modal.querySelector('#bookLevel').addEventListener('change', event => {
-    modal.querySelector('#departmentField').style.display =
-      isSss(event.target.value) ? 'block' : 'none';
-  });
-
+    </div>`;
+  document.body.appendChild(modal); modal.querySelector('#closeModal').onclick = () => modal.remove();
   modal.querySelector('#bookForm').addEventListener('submit', async event => {
-    event.preventDefault();
-
-    const form = new FormData(event.target);
-
-    const title = String(form.get('title') || '').trim();
-    const author = String(form.get('author') || '').trim();
-    const description = String(form.get('description') || '').trim();
-    const level = String(form.get('level') || '').trim();
-    const department = isSss(level) ? form.get('department') : null;
-    const coverFile = form.get('cover');
-    const bookFile = form.get('book');
-
-    if (!title) {
-      alert('Enter the book title.');
-      return;
-    }
-
-    if (!level) {
-      alert('Choose a level.');
-      return;
-    }
-
-    if (isSss(level) && !department) {
-      alert('Choose a department for SSS books.');
-      return;
-    }
-
-    if (!bookFile || bookFile.size === 0) {
-      alert('Select a PDF or EPUB book.');
-      return;
-    }
-
-    const lowerName = bookFile.name.toLowerCase();
-
-    let fileType;
-    let extension;
-    let contentType;
-
-    if (
-      lowerName.endsWith('.epub') ||
-      bookFile.type === 'application/epub+zip'
-    ) {
-      fileType = 'epub';
-      extension = 'epub';
-      contentType = 'application/epub+zip';
-    } else if (
-      lowerName.endsWith('.pdf') ||
-      bookFile.type === 'application/pdf'
-    ) {
-      fileType = 'pdf';
-      extension = 'pdf';
-      contentType = 'application/pdf';
-    } else {
-      alert('Only PDF and EPUB books are supported.');
-      return;
-    }
-
-    const safeName = title
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-|-$/g, '');
-
-    const unique =
-      `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-
-    const filePath =
-      `${level}/${unique}-${safeName}.${extension}`;
-
-    const bookUpload = await supabase.storage
-      .from('pdf')
-      .upload(filePath, bookFile, {
-        contentType,
-        upsert: false
-      });
-
-    if (bookUpload.error) {
-      alert(`${fileType.toUpperCase()} upload failed.`);
-      console.error(bookUpload.error);
-      return;
-    }
-
-    let coverPath = null;
-
-    if (coverFile && coverFile.size > 0) {
-      const coverExtension =
-        coverFile.name.split('.').pop() || 'jpg';
-
-      coverPath =
-        `${level}/${unique}-${safeName}.${coverExtension}`;
-
-      const coverUpload = await supabase.storage
-        .from('covers')
-        .upload(coverPath, coverFile, {
-          upsert: false
-        });
-
-      if (coverUpload.error) {
-        await supabase.storage
-          .from('pdf')
-          .remove([filePath]);
-
-        alert('Cover upload failed.');
-        console.error(coverUpload.error);
-        return;
-      }
-    }
-
-    const { error } = await supabase
-      .from('books')
-      .insert({
-        title,
-        author,
-        description,
-        level,
-        department,
-        cover_path: coverPath,
-        file_path: filePath,
-        file_type: fileType,
-        published: true
-      });
-
-    if (error) {
-      await supabase.storage
-        .from('pdf')
-        .remove([filePath]);
-
-      if (coverPath) {
-        await supabase.storage
-          .from('covers')
-          .remove([coverPath]);
-      }
-
-      alert('Book record could not be created.');
-      console.error(error);
-      return;
-    }
-
-    alert(
-      `Book uploaded successfully as ${fileType.toUpperCase()}.`
-    );
-
-    modal.remove();
-
-    await loadData();
-    renderSection('books');
+    event.preventDefault(); const form = new FormData(event.target);
+    const title = String(form.get('title') || '').trim(); const author = String(form.get('author') || '').trim(); const description = String(form.get('description') || '').trim();
+    const allowDownload = form.get('allow_download') === 'on'; const coverFile = form.get('cover'); const bookFile = form.get('book');
+    if (!title) return alert('Enter the book title.'); if (!bookFile || bookFile.size === 0) return alert('Select a PDF or EPUB book.');
+    const lowerName = bookFile.name.toLowerCase(); let fileType, extension, contentType;
+    if (lowerName.endsWith('.epub') || bookFile.type === 'application/epub+zip') { fileType='epub'; extension='epub'; contentType='application/epub+zip'; }
+    else if (lowerName.endsWith('.pdf') || bookFile.type === 'application/pdf') { fileType='pdf'; extension='pdf'; contentType='application/pdf'; }
+    else return alert('Only PDF and EPUB books are supported.');
+    const safeName = title.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'') || 'book'; const unique=`${Date.now()}-${Math.random().toString(36).slice(2,8)}`; const filePath=`books/${unique}-${safeName}.${extension}`;
+    const bookUpload = await supabase.storage.from('pdf').upload(filePath, bookFile, {contentType, upsert:false});
+    if (bookUpload.error) { console.error(bookUpload.error); return alert(`${fileType.toUpperCase()} upload failed.`); }
+    let coverPath=null;
+    if (coverFile && coverFile.size>0) { const coverExtension=coverFile.name.split('.').pop() || 'jpg'; coverPath=`books/${unique}-${safeName}.${coverExtension}`; const coverUpload=await supabase.storage.from('covers').upload(coverPath,coverFile,{upsert:false}); if (coverUpload.error) { await supabase.storage.from('pdf').remove([filePath]); console.error(coverUpload.error); return alert('Cover upload failed.'); } }
+    const {error}=await supabase.from('books').insert({title,author,description,level:null,department:null,cover_path:coverPath,file_path:filePath,file_type:fileType,allow_download:allowDownload,published:true});
+    if (error) { await supabase.storage.from('pdf').remove([filePath]); if (coverPath) await supabase.storage.from('covers').remove([coverPath]); console.error(error); return alert('Book record could not be created. Run the database migration first.'); }
+    alert(`Book uploaded successfully as ${fileType.toUpperCase()}.`); modal.remove(); await loadData(); renderSection('books');
   });
 }
 
@@ -822,6 +629,7 @@ async function init() {
   const result = await requireAdmin();
   if (!result) return;
 
+  currentAdminProfile = result.profile;
   await loadData();
   render();
 }
